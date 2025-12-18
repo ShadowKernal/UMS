@@ -2,29 +2,49 @@ import * as React from 'react';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { useTheme } from '@mui/material/styles';
 
-const uData = [4000, 3000, 2000, 2780, 1890, 2390, 3490];
-const pData = [2400, 1398, 9800, 3908, 4800, 3800, 4300];
-const xLabels = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-];
+interface LoginActivityChartProps {
+    data?: Array<{ day: string; success: number; failed: number }>;
+}
 
-export default function LoginActivityChart() {
+export default function LoginActivityChart({ data }: LoginActivityChartProps) {
     const theme = useTheme();
+
+    // Use provided data or fallback to mock data
+    const chartData = data || [
+        { day: 'Mon', success: 24, failed: 4 },
+        { day: 'Tue', success: 30, failed: 3 },
+        { day: 'Wed', success: 28, failed: 8 },
+        { day: 'Thu', success: 35, failed: 2 },
+        { day: 'Fri', success: 32, failed: 5 },
+        { day: 'Sat', success: 15, failed: 1 },
+        { day: 'Sun', success: 12, failed: 2 },
+    ];
 
     return (
         <BarChart
             height={300}
             series={[
-                { data: pData, label: 'Successful', id: 'pvId', stack: 'total', color: theme.palette.success.main },
-                { data: uData, label: 'Failed', id: 'uvId', stack: 'total', color: theme.palette.error.main },
+                {
+                    data: chartData.map(d => d.success),
+                    label: 'Successful',
+                    id: 'success',
+                    stack: 'total',
+                    color: theme.palette.success.main,
+                },
+                {
+                    data: chartData.map(d => d.failed),
+                    label: 'Failed',
+                    id: 'failed',
+                    stack: 'total',
+                    color: theme.palette.error.main,
+                },
             ]}
-            xAxis={[{ data: xLabels, scaleType: 'band' }]}
+            xAxis={[{ data: chartData.map(d => d.day), scaleType: 'band' }]}
+            sx={{
+                '.MuiBarElement-root': {
+                    rx: 4,
+                },
+            }}
         />
     );
 }

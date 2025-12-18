@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -10,7 +11,9 @@ import dynamic from "next/dynamic";
 const LottiePlayer = dynamic(() => import("@/components/ui/LottiePlayer"), {
   ssr: false,
 });
-import { Google, GitHub } from "@mui/icons-material"; // Keeping icons for now, can replace later
+import { Google, GitHub } from "@mui/icons-material";
+
+const ANIMATION_COOKING_POT = "https://assets10.lottiefiles.com/packages/lf20_bpqri9y8.json";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,63 +50,65 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      {/* Left Panel - Branding */}
-      <div className="hidden md:flex flex-col items-center justify-center p-12 relative overflow-hidden bg-gradient-to-br from-indigo-600 to-violet-700 text-white">
-        <div className="relative z-10 text-center">
-          <h1 className="text-5xl font-extrabold mb-4 tracking-tight">PrepMaster</h1>
-          <p className="text-2xl font-medium text-white/90 mb-6">Kitchen confidence, automated.</p>
-          <p className="text-white/75 max-w-md mx-auto text-lg leading-relaxed">
-            Ditch the stress. Sign in to access your personalized meal plans,
-            smart grocery lists, and step-by-step cooking guides.
-          </p>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_30%_20%,_#ecfdf5_0%,_transparent_50%),radial-gradient(circle_at_70%_80%,_#f8fafc_0%,_transparent_50%)] pointer-events-none -z-10" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-10">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="bg-emerald-600 p-2.5 rounded-xl shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform">
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-slate-900 tracking-tight">PrepMaster</span>
+          </Link>
         </div>
 
-        {/* Abstract decorative circles */}
-        <div className="absolute -top-24 -right-24 w-[500px] h-[500px] rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -bottom-12 -left-12 w-[300px] h-[300px] rounded-full bg-white/10 blur-2xl" />
-
-        {/* Lottie Animation */}
-        <div className="relative z-10 w-96 h-96 mt-8 opacity-90">
-          <LottiePlayer src="https://assets10.lottiefiles.com/packages/lf20_bpqri9y8.json" /> {/* Cooking/Chef Animation */}
-        </div>
-      </div>
-
-      {/* Right Panel - Form */}
-      <div className="flex flex-col items-center justify-center p-8 bg-slate-50">
-        <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-2xl shadow-xl shadow-slate-200/50">
+        <div className="glass-card rounded-[2.5rem] p-8 md:p-10 bg-white/80 border-slate-200/60 shadow-2xl space-y-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Welcome back</h2>
-            <p className="mt-2 text-slate-500">Log in to manage your kitchen.</p>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Welcome back</h1>
+            <p className="text-slate-500 font-medium font-sans">Log in to manage your kitchen.</p>
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm font-medium border border-red-100">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-medium border border-red-100"
+            >
               {error}
-            </div>
+            </motion.div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" onClick={() => alert("Google login not implemented")} className="w-full">
+            <Button variant="outline" onClick={() => alert("Google login not implemented")} className="w-full rounded-xl border-slate-200 hover:border-emerald-500/30 hover:bg-emerald-50 transition-all font-sans">
               <Google className="mr-2 h-4 w-4" /> Google
             </Button>
-            <Button variant="outline" onClick={() => alert("GitHub login not implemented")} className="w-full">
+            <Button variant="outline" onClick={() => alert("GitHub login not implemented")} className="w-full rounded-xl border-slate-200 hover:border-emerald-500/30 hover:bg-emerald-50 transition-all font-sans">
               <GitHub className="mr-2 h-4 w-4" /> GitHub
             </Button>
           </div>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-slate-200" />
+              <span className="w-full border-t border-slate-100" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-slate-500">Or continue with email</span>
+              <span className="bg-white/80 px-4 text-slate-400 font-bold tracking-widest font-sans">Or continue with email</span>
             </div>
           </div>
 
-          <form onSubmit={submit} className="space-y-6">
+          <form onSubmit={submit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email" className="text-slate-700 font-bold ml-1 font-sans">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -112,12 +117,15 @@ export default function LoginPage() {
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
                 autoFocus
-                className="h-11"
+                className="h-12 rounded-xl border-slate-200 focus:ring-emerald-500/20 focus:border-emerald-500 font-sans"
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between ml-1">
+                <Label htmlFor="password" title="password" className="text-slate-700 font-bold font-sans">Password</Label>
+                <Link href="/forgot-password" title="forgot-password" className="text-xs font-bold text-emerald-600 hover:text-emerald-500 transition-colors font-sans">
+                  Forgot?
+                </Link>
               </div>
               <Input
                 id="password"
@@ -125,39 +133,38 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11"
+                className="h-12 rounded-xl border-slate-200 focus:ring-emerald-500/20 focus:border-emerald-500 font-sans"
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                />
-                <label htmlFor="remember" className="text-sm font-medium text-slate-700">Remember me</label>
-              </div>
-              <Link href="/forgot-password" className="text-sm font-medium text-emerald-600 hover:text-emerald-500 hover:underline">
-                Forgot password?
-              </Link>
+            <div className="flex items-center space-x-2 ml-1">
+              <input
+                type="checkbox"
+                id="remember"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded-md border-slate-300 text-emerald-600 focus:ring-emerald-500 transition-all"
+              />
+              <label htmlFor="remember" className="text-sm font-medium text-slate-600 cursor-pointer font-sans">Remember me next time</label>
             </div>
 
-            <Button type="submit" size="lg" className="w-full text-base py-6" disabled={loading}>
+            <Button type="submit" size="lg" className="w-full h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg shadow-[0_10px_30px_-5px_rgba(16,185,129,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] border-none font-sans" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
-          <p className="text-center text-sm text-slate-600">
+          <p className="text-center text-sm text-slate-500 font-medium font-sans">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-bold text-emerald-600 hover:text-emerald-500 hover:underline">
-              Sign up
+            <Link href="/signup" className="text-emerald-600 font-bold hover:underline underline-offset-4 font-sans">
+              Create one now
             </Link>
           </p>
         </div>
-      </div>
+
+        <div className="mt-12 flex justify-center opacity-40 grayscale group hover:grayscale-0 transition-all">
+          <LottiePlayer src={ANIMATION_COOKING_POT} className="w-24 h-24" />
+        </div>
+      </motion.div>
     </div>
   );
 }

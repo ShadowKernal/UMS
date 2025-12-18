@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${outfit.variable} ${inter.variable}`}>
-      <body suppressHydrationWarning data-gramm="false" data-gramm_editor="false" className="bg-slate-950 antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
+      <body suppressHydrationWarning data-gramm="false" data-gramm_editor="false" className="bg-white antialiased selection:bg-emerald-500/30 selection:text-emerald-900 text-slate-900">
         <ThemeRegistry>
           {children}
         </ThemeRegistry>

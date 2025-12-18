@@ -21,17 +21,26 @@ export async function GET(req: NextRequest) {
     const { conn } = requireAdmin(req);
     const search = (req.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
     const format = (req.nextUrl.searchParams.get("format") || "").toLowerCase();
+    const userId = (req.nextUrl.searchParams.get("userId") || "").trim();
     const page = Math.max(1, parseInt(req.nextUrl.searchParams.get("page") || "1", 10) || 1);
     const limit = Math.max(1, Math.min(200, parseInt(req.nextUrl.searchParams.get("limit") || "50", 10) || 50));
     const offset = (page - 1) * limit;
 
     const params: unknown[] = [];
-    let where = "";
+    const conditions: string[] = [];
+
+    if (userId) {
+      conditions.push("(a.actor_user_id = ? OR a.target_user_id = ?)");
+      params.push(userId, userId);
+    }
+
     if (search) {
-      where = "WHERE LOWER(a.action) LIKE ? OR LOWER(au.email) LIKE ? OR LOWER(tu.email) LIKE ?";
+      conditions.push("(LOWER(a.action) LIKE ? OR LOWER(au.email) LIKE ? OR LOWER(tu.email) LIKE ?)");
       const needle = `%${search}%`;
       params.push(needle, needle, needle);
     }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const rows = conn
       .prepare(

@@ -16,7 +16,7 @@ const LottiePlayer = dynamic(() => import("@/components/ui/LottiePlayer"), {
 const ANIMATION_CHEF = "https://lottie.host/2f17e5d3-3047-4514-963e-9f9f72f256f2/vkYeLAxlCU.lottie";
 const ANIMATION_HEALTHY_BOWL = "https://lottie.host/fff10634-ed3e-48e1-994c-b19da3c8c3d6/2BLrWoB9H9.lottie";
 const ANIMATION_GROCERY_BAG = "https://lottie.host/983c6810-785a-4dba-859d-f962b8885123/Yylci9yqdJ.lottie";
-const ANIMATION_COOKING_POT = "https://lottie.host/67035f29-a359-4d64-884d-2d075276e033/W65O0sI7Wc.json";
+const ANIMATION_COOKING_POT = "https://assets10.lottiefiles.com/packages/lf20_bpqri9y8.json";
 
 export default function HomePage() {
   const containerRef = useRef(null);
@@ -31,11 +31,8 @@ export default function HomePage() {
   return (
     <main ref={containerRef} className="text-slate-900 overflow-x-hidden relative selection:bg-emerald-500/30">
 
-      {/* GLOBAL AMBIENT BACKGROUND */}
-      <div className="fixed inset-0 pointer-events-none -z-50 overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[1000px] h-[1000px] rounded-full bg-emerald-100/40 blur-[120px] animate-pulse-slow" />
-        <div className="absolute top-[20%] right-[-20%] w-[800px] h-[800px] rounded-full bg-emerald-50/60 blur-[100px] animate-float" />
-        <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-slate-100/50 blur-[120px] animate-pulse-slow transition-opacity delay-1000" />
+      {/* GLOBAL AMBIENT BACKGROUND - REMOVED FOR CLEAN CONSISTENCY */}
+      <div className="fixed inset-0 pointer-events-none -z-50 overflow-hidden bg-white">
       </div>
 
       <header className="pt-32 pb-32 min-h-[90vh] flex items-center relative z-10 px-6">

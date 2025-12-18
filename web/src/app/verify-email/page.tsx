@@ -2,23 +2,11 @@
 
 import { FormEvent, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Container,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  Fade,
-  Stack,
-  Link as MuiLink,
-} from "@mui/material";
 import Link from "next/link";
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 
 function VerifyEmailForm() {
   const searchParams = useSearchParams();
@@ -27,7 +15,6 @@ function VerifyEmailForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
 
   useEffect(() => {
     const tokenParam = searchParams.get("token");
@@ -65,132 +52,102 @@ function VerifyEmailForm() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "background.default",
-        p: 2,
-        backgroundImage: 'radial-gradient(at 50% 0%, hsl(250, 60%, 96%) 0%, transparent 50%)'
-      }}
-    >
-      <Container maxWidth="sm">
-        <Fade in timeout={500}>
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 4,
-              border: '1px solid',
-              borderColor: 'divider',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)'
-            }}
-          >
-            <CardContent sx={{ p: { xs: 3, md: 5 }, textAlign: "center" }}>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_20%,_#ecfdf5_0%,_transparent_50%)] pointer-events-none -z-10" />
 
-              {!message ? (
-                <>
-                  <Box
-                    sx={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: '50%',
-                      bgcolor: 'primary.light',
-                      color: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: 3
-                    }}
-                  >
-                    <MarkEmailReadIcon fontSize="large" />
-                  </Box>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-10">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="bg-emerald-600 p-2.5 rounded-xl shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform">
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-slate-900 tracking-tight">PrepMaster</span>
+          </Link>
+        </div>
 
-                  <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-                    Verify Email
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                    Please enter the verification code sent to your email address.
-                  </Typography>
+        <div className="glass-card rounded-[2.5rem] p-8 md:p-10 bg-white/80 border-slate-200/60 shadow-2xl space-y-8">
+          {!message ? (
+            <>
+              <div className="text-center">
+                <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Verify Email</h1>
+                <p className="text-slate-500 font-medium font-sans">Please enter the code sent to your email.</p>
+              </div>
 
-                  {error && (
-                    <Alert severity="error" sx={{ mb: 3, textAlign: 'left' }}>
-                      {error}
-                    </Alert>
-                  )}
-
-                  <Box component="form" onSubmit={submit}>
-                    <TextField
-                      fullWidth
-                      label="Verification Code"
-                      value={token}
-                      onChange={(e) => setToken(e.target.value)}
-                      required
-                      placeholder="e.g. paste-your-token-here"
-                      autoFocus={!token}
-                      sx={{ mb: 3 }}
-                      InputProps={{
-                        sx: { fontSize: '1.1rem', fontFamily: 'monospace' }
-                      }}
-                    />
-
-                    <Button
-                      type="submit"
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      disabled={loading || !token}
-                      sx={{ height: 48, fontSize: '1rem' }}
-                    >
-                      {loading ? <CircularProgress size={24} color="inherit" /> : "Verify Email"}
-                    </Button>
-                  </Box>
-                </>
-              ) : (
-                <Stack alignItems="center" spacing={3}>
-                  <Box sx={{ color: 'success.main' }}>
-                    <CheckCircleOutlineIcon sx={{ fontSize: 80 }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="h4" gutterBottom fontWeight="bold" color="text.primary">
-                      Verified!
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      {message}
-                    </Typography>
-                  </Box>
-                  <Button
-                    component={Link}
-                    href="/login"
-                    variant="contained"
-                    size="large"
-                    fullWidth
-                  >
-                    Sign In Now
-                  </Button>
-                </Stack>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-medium border border-red-100 font-sans"
+                >
+                  {error}
+                </motion.div>
               )}
-            </CardContent>
-          </Card>
-        </Fade>
 
-        <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            <MuiLink component={Link} href="/login" underline="hover">
-              Back to Login
-            </MuiLink>
-          </Typography>
-        </Box>
-      </Container>
-    </Box>
+              <form onSubmit={submit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="token" className="text-slate-700 font-bold ml-1 font-sans">Verification Code</Label>
+                  <Input
+                    id="token"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    required
+                    placeholder="Enter your token"
+                    autoFocus={!token}
+                    className="h-12 rounded-xl border-slate-200 focus:ring-emerald-500/20 focus:border-emerald-500 font-sans font-mono"
+                  />
+                </div>
+
+                <Button type="submit" size="lg" className="w-full h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg shadow-[0_10px_30px_-5px_rgba(16,185,129,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] border-none font-sans" disabled={loading || !token}>
+                  {loading ? "Verifying..." : "Verify Email"}
+                </Button>
+
+                <div className="text-center">
+                  <Link href="/login" className="text-sm font-bold text-slate-500 hover:text-emerald-600 transition-colors font-sans">
+                    Back to Login
+                  </Link>
+                </div>
+              </form>
+            </>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center space-y-6"
+            >
+              <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-3xl bg-emerald-50 text-emerald-600 shadow-inner">
+                <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-3xl font-bold text-slate-900 tracking-tight">Verified!</h3>
+                <p className="text-slate-500 font-medium font-sans">{message}</p>
+              </div>
+              <Link href="/login" className="block">
+                <Button className="w-full h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-200 font-sans">
+                  Sign In Now
+                </Button>
+              </Link>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center font-bold text-emerald-600 tracking-widest uppercase text-xs">Loading...</div>}>
       <VerifyEmailForm />
     </Suspense>
   );
