@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    /* White */
+    --foreground: #020617;
+    /* Slate 950 */
+    --primary: #10b981;
+    /* Emerald 500 */
+    --primary-glow: rgba(16, 185, 129, 0.4);
+  }
+
+  body {
+    @apply bg-white text-slate-900 font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight text-slate-900;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-outfit), sans-serif;
+  }
+
+  .font-sans {
+    font-family: var(--font-inter), sans-serif;
+  }
+
+  /* Premium Glass Cards - Light Mode */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-slate-200 shadow-xl;
+  }
+
+  .glass-card-hover {
+    @apply transition-all duration-500 hover:bg-white/90 hover:border-emerald-500/30;
+
+    &:hover {
+      box-shadow: 0 10px 40px -10px rgba(16, 185, 129, 0.15);
+    }
+  }
+
+  /* Text Gradients */
+  .text-gradient-silver {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-slate-400 via-slate-600 to-slate-400;
+  }
+
+  .text-gradient-emerald {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600;
+  }
+
+
+  /* Animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-glow {
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px -5px var(--primary);
+  }
+
+  to {
+    box-shadow: 0 0 25px 5px var(--primary-glow);
+  }
+}
