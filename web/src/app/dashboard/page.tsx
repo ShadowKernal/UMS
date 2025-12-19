@@ -18,6 +18,7 @@ import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import BlockIcon from '@mui/icons-material/Block';
@@ -165,6 +166,12 @@ export default function DashboardPage() {
                     </Button>
                 </Box>
             </Box>
+
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                </Alert>
+            )}
 
             {/* KPI Cards */}
             <Grid container spacing={3} sx={{ mb: 4 }}>

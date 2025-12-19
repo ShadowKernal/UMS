@@ -10,7 +10,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 interface AnalyticsCardProps {
     title: string;
     value?: string | number;
-    subtitle?: string;
+    subtitle?: React.ReactNode;
     tooltip?: string;
     children?: React.ReactNode;
     action?: React.ReactNode;
@@ -46,9 +46,15 @@ export default function AnalyticsCard({ title, value, subtitle, tooltip, childre
                 )}
 
                 {subtitle && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {subtitle}
-                    </Typography>
+                    typeof subtitle === 'string' ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {subtitle}
+                        </Typography>
+                    ) : (
+                        <Box sx={{ mb: 2 }}>
+                            {subtitle}
+                        </Box>
+                    )
                 )}
 
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>

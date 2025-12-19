@@ -136,7 +136,10 @@ export default function AuditLogsClient({ initialLogs }: AuditLogsClientProps) {
     const [actionFilter, setActionFilter] = React.useState('');
     const [timeRange, setTimeRange] = React.useState('');
     const [showFilters, setShowFilters] = React.useState(false);
-    const [selectedRows, setSelectedRows] = React.useState<GridRowSelectionModel>([]);
+    const [selectedRows, setSelectedRows] = React.useState<GridRowSelectionModel>({
+        type: 'include',
+        ids: new Set()
+    });
 
     const loadLogs = React.useCallback((options?: { forceRefresh?: boolean }) => {
         const q = search.trim();
@@ -347,12 +350,12 @@ export default function AuditLogsClient({ initialLogs }: AuditLogsClientProps) {
                 />
             </Paper>
 
-            {selectedRows.length > 0 && (
+            {selectedRows.ids.size > 0 && (
                 <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Typography variant="body2">
-                        {selectedRows.length} log(s) selected
+                        {selectedRows.ids.size} log(s) selected
                     </Typography>
-                    <Button size="small" variant="outlined" onClick={() => setSelectedRows([])}>
+                    <Button size="small" variant="outlined" onClick={() => setSelectedRows({ type: 'include', ids: new Set() })}>
                         Clear Selection
                     </Button>
                 </Box>
