@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { COOKIE_CSRF, COOKIE_SESSION, SESSION_MAX_AGE_SECONDS, SESSION_REMEMBER_AGE_SECONDS, USER_STATUS_DELETED, USER_STATUS_DISABLED } from "./constants";
 import { ApiError } from "./errors";
-import { getDb, userRoles } from "./db";
+import { dbEnabled, getDb, userRoles } from "./db";
 import { nowTs } from "./time";
 import { randomToken, sha256Hex } from "./security";
 import { getClientIp } from "./http";
@@ -19,6 +19,7 @@ export type ActiveSession = {
 };
 
 export const getActiveSession = (req: NextRequest): ActiveSession | null => {
+  if (!dbEnabled) return null;
   const cookie = req.cookies.get(COOKIE_SESSION)?.value;
   if (!cookie) return null;
   return validateSessionToken(cookie);
@@ -26,6 +27,7 @@ export const getActiveSession = (req: NextRequest): ActiveSession | null => {
 
 // Extracted validation logic to reuse in Server Components
 const validateSessionToken = (tokenRaw: string): ActiveSession | null => {
+  if (!dbEnabled) return null;
   const conn = getDb();
   interface SessionRow {
     id: string;
@@ -64,6 +66,7 @@ const validateSessionToken = (tokenRaw: string): ActiveSession | null => {
 
 // Server Component Helper
 export const getCurrentUser = () => {
+  if (!dbEnabled) return null;
   const cookieStore = cookies();
   const token = cookieStore.get(COOKIE_SESSION)?.value;
   if (!token) return null;
@@ -102,6 +105,9 @@ export const createSession = (opts: {
   remember: boolean;
   req: NextRequest;
 }) => {
+  if (!dbEnabled) {
+    throw new ApiError(503, "DB_DISABLED", "Database disabled");
+  }
   const { userId, remember, req } = opts;
   const conn = getDb();
 
