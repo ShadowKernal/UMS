@@ -1,4 +1,4 @@
-# PrepMastere
+# PrepMaster
 
 Meal-prep planning web app built with Next.js. The repo includes the frontend +
 API routes in `web/` and a USDA FoodData Central JSON snapshot in `fooddata/`
