@@ -123,9 +123,9 @@ export const sendDevEmail = async (
   { toEmail, subject, body }: { toEmail: string; subject: string; body: string }
 ) => {
   if (mailConfigured()) {
-    sendEmail({ to: toEmail, subject, text: body }).catch((err) => {
-      console.error("SMTP send failed", err);
-    });
+    await sendEmail({ to: toEmail, subject, text: body });
+  } else {
+    console.warn("SMTP not configured; skipping email send.");
   }
   await conn
     .prepare("INSERT INTO dev_outbox (id, to_email, subject, body, created_at) VALUES (?, ?, ?, ?, ?)")
