@@ -13,11 +13,11 @@ const DEFAULT_SETTINGS: SettingsState = {
     compliance: { auditLogging: true, enforceSso: false, logRetentionDays: 365 },
 };
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
     const conn = getDb();
 
     // Server-side data fetching - much faster than client-side API calls
-    const row = conn.prepare("SELECT value_json FROM settings WHERE key = ?").get(SETTINGS_KEY) as { value_json: string } | undefined;
+    const row = (await conn.prepare("SELECT value_json FROM settings WHERE key = ?").get(SETTINGS_KEY)) as { value_json: string } | undefined;
 
     let initialSettings = DEFAULT_SETTINGS;
     if (row) {

@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
       status: string;
     }
 
-    const signupTx = conn.transaction(() => {
-      const existing = conn.prepare("SELECT * FROM users WHERE email_norm = ?").get(emailNorm) as UserRow | undefined;
+    const signupTx = conn.transaction(async (tx) => {
+      const existing = (await tx.prepare("SELECT * FROM users WHERE email_norm = ?").get(emailNorm)) as UserRow | undefined;
 
       let userId: string | null = null;
       let isNewUser = false;
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         isNewUser = true;
       } else if (existing.status === USER_STATUS_DELETED) {
         // Purge any deleted record and recreate fresh.
-        conn.prepare("DELETE FROM users WHERE id = ?").run(existing.id);
+        await tx.prepare("DELETE FROM users WHERE id = ?").run(existing.id);
         isNewUser = true;
       } else {
         // Existing non-deleted account blocks signup.
@@ -51,12 +51,12 @@ export async function POST(req: NextRequest) {
 
       if (isNewUser) {
         userId = newId();
-        conn
+        await tx
           .prepare(
             "INSERT INTO users (id, email, email_norm, email_verified_at, password_hash, status, display_name, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?)"
           )
           .run(userId, email, emailNorm, passwordHashSync(password), USER_STATUS_PENDING, displayName, ts, ts);
-        conn
+        await tx
           .prepare("INSERT INTO user_roles (user_id, role_name, assigned_by_user_id, assigned_at) VALUES (?, ?, NULL, ?)")
           .run(userId, ROLE_USER, ts);
       }
@@ -64,24 +64,24 @@ export async function POST(req: NextRequest) {
       // Only send verification email if it's a new user to prevent enumeration/bombing
       if (isNewUser && userId) {
         const rawToken = randomToken(18);
-        conn
+        await tx
           .prepare(
             "INSERT INTO email_verification_tokens (id, user_id, token_hash, created_at, expires_at, used_at) VALUES (?, ?, ?, ?, ?, NULL)"
           )
           .run(newId(), userId, sha256Hex(rawToken), ts, ts + 24 * 3600);
         const verifyLink = `${getBaseUrl(req)}/verify-email?token=${encodeURIComponent(rawToken)}`;
-        sendDevEmail(conn, {
+        await sendDevEmail(tx, {
           toEmail: email,
           subject: "Verify your email",
           body: `Your verification code:\n\n${rawToken}\n\nOr open:\n${verifyLink}\n`
         });
-        auditLog(conn, { action: "EMAIL_VERIFICATION_SENT", actorUserId: null, targetUserId: userId, ip: getClientIp(req) });
+        await auditLog(tx, { action: "EMAIL_VERIFICATION_SENT", actorUserId: null, targetUserId: userId, ip: getClientIp(req) });
       }
 
       return { status: USER_STATUS_PENDING };
     });
 
-    const result = signupTx();
+    const result = await signupTx();
     return jsonResponse(202, { status: result.status });
 
   });

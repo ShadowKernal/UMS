@@ -10,9 +10,9 @@ import { nowTs } from "@/lib/time";
 
 export async function GET(req: NextRequest) {
   return handleApi(req, async () => {
-    const session = assertAuthenticated(req);
+    const session = await assertAuthenticated(req);
     const conn = getDb();
-    const roles = userRoles(conn, session.user_id);
+    const roles = await userRoles(conn, session.user_id);
     if (!roles.includes(ROLE_ADMIN) && !roles.includes(ROLE_SUPER_ADMIN)) {
       throw new ApiError(403, "FORBIDDEN", "Admin role required");
     }
@@ -30,17 +30,17 @@ export async function GET(req: NextRequest) {
     const limit = Math.max(1, Math.min(100, parseInt(req.nextUrl.searchParams.get("limit") || "50") || 50));
     const offset = (page - 1) * limit;
 
-    const users = conn
+    const users = (await conn
       .prepare("SELECT id, email, status, display_name, created_at, updated_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?")
-      .all(limit, offset) as User[];
+      .all(limit, offset)) as User[];
     const allUserIds = users.map(u => u.id);
     const allRolesMap = new Map<string, string[]>();
 
     if (allUserIds.length > 0) {
       // Fetch all roles for all users in one query
-      const rolesQuery = conn
+      const rolesQuery = (await conn
         .prepare(`SELECT user_id, role_name as role FROM user_roles WHERE user_id IN (${allUserIds.map(() => '?').join(',')})`)
-        .all(...allUserIds) as Array<{ user_id: string; role: string }>;
+        .all(...allUserIds)) as Array<{ user_id: string; role: string }>;
 
       rolesQuery.forEach(row => {
         if (!allRolesMap.has(row.user_id)) {
@@ -62,9 +62,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return handleApi(req, async () => {
-    const session = assertAuthenticated(req);
+    const session = await assertAuthenticated(req);
     const conn = getDb();
-    const roles = userRoles(conn, session.user_id);
+    const roles = await userRoles(conn, session.user_id);
     if (!roles.includes(ROLE_ADMIN) && !roles.includes(ROLE_SUPER_ADMIN)) {
       throw new ApiError(403, "FORBIDDEN", "Admin role required");
     }
@@ -77,39 +77,39 @@ export async function POST(req: NextRequest) {
     if (!isValidEmail(email)) throw new ApiError(400, "VALIDATION_FAILED", "Invalid email");
 
     const emailNorm = normalizeEmail(email);
-    const existing = conn.prepare("SELECT id FROM users WHERE email_norm = ?").get(emailNorm);
+    const existing = await conn.prepare("SELECT id FROM users WHERE email_norm = ?").get(emailNorm);
     if (existing) throw new ApiError(409, "CONFLICT", "User already exists");
 
     const userId = newId();
     const ts = nowTs();
     const passwordHash = passwordHashSync(randomToken(16)); // Random password for invited users
 
-    const inviteTx = conn.transaction(() => {
-      conn
+    const inviteTx = conn.transaction(async (tx) => {
+      await tx
         .prepare(
           "INSERT INTO users (id, email, email_norm, email_verified_at, password_hash, status, display_name, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?)"
         )
         .run(userId, email, emailNorm, passwordHash, USER_STATUS_PENDING, displayName, ts, ts);
 
-      conn
+      await tx
         .prepare("INSERT INTO user_roles (user_id, role_name, assigned_by_user_id, assigned_at) VALUES (?, ?, ?, ?)")
         .run(userId, role, session.user_id, ts);
 
       const rawToken = generateCode(9);
-      conn
+      await tx
         .prepare(
           "INSERT INTO email_verification_tokens (id, user_id, token_hash, created_at, expires_at, used_at) VALUES (?, ?, ?, ?, ?, NULL)"
         )
         .run(newId(), userId, sha256Hex(rawToken), ts, ts + 24 * 3600 * 7); // 7 days for invites
 
       const inviteLink = `${req.nextUrl.origin}/verify-email?token=${encodeURIComponent(rawToken)}`;
-      sendDevEmail(conn, {
+      await sendDevEmail(tx, {
         toEmail: email,
         subject: "You have been invited",
         body: `You have been invited to join the platform.\n\nClick here to accept:\n${inviteLink}\n`
       });
 
-      auditLog(conn, {
+      await auditLog(tx, {
         action: "USER_INVITED",
         actorUserId: session.user_id,
         targetUserId: userId,
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    inviteTx();
+    await inviteTx();
 
     return jsonResponse(201, { ok: true, id: userId });
   });

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       status: string;
     }
 
-    const row = conn
+    const row = (await conn
       .prepare(
         `
         SELECT t.*, u.status
@@ -32,21 +32,21 @@ export async function POST(req: NextRequest) {
         WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ?
       `
       )
-      .get(tokenHash, ts) as VerifyTokenRow | undefined;
+      .get(tokenHash, ts)) as VerifyTokenRow | undefined;
     if (!row) throw new ApiError(400, "INVALID_TOKEN", "Invalid or expired token");
 
-    const verifyTx = conn.transaction(() => {
-      conn.prepare("UPDATE email_verification_tokens SET used_at = ? WHERE id = ?").run(ts, row.id);
-      conn
+    const verifyTx = conn.transaction(async (tx) => {
+      await tx.prepare("UPDATE email_verification_tokens SET used_at = ? WHERE id = ?").run(ts, row.id);
+      await tx
         .prepare(
           "UPDATE users SET email_verified_at = ?, status = ?, updated_at = ? WHERE id = ? AND status != ?"
         )
         .run(ts, USER_STATUS_ACTIVE, ts, row.user_id, USER_STATUS_DISABLED);
-      auditLog(conn, { action: "EMAIL_VERIFIED", actorUserId: null, targetUserId: row.user_id, ip: getClientIp(req) });
+      await auditLog(tx, { action: "EMAIL_VERIFIED", actorUserId: null, targetUserId: row.user_id, ip: getClientIp(req) });
       return USER_STATUS_ACTIVE;
     });
 
-    const newStatus = verifyTx();
+    const newStatus = await verifyTx();
     return jsonResponse(200, { status: newStatus });
   });
 }

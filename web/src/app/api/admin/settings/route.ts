@@ -45,23 +45,23 @@ const defaultSettings: Settings = {
 
 export async function GET(req: NextRequest) {
   return handleApi(req, async () => {
-    const { conn } = requireAdmin(req);
-    return jsonResponse(200, { settings: getSettings(conn) });
+    const { conn } = await requireAdmin(req);
+    return jsonResponse(200, { settings: await getSettings(conn) });
   });
 }
 
 export async function POST(req: NextRequest) {
   return handleApi(req, async () => {
-    const { conn, session } = requireAdmin(req);
+    const { conn, session } = await requireAdmin(req);
     const body = await req.json();
-    const merged = mergeSettings(getSettings(conn), (body || {}) as Partial<Settings>);
+    const merged = mergeSettings(await getSettings(conn), (body || {}) as Partial<Settings>);
     const ts = nowTs();
 
-    conn
-      .prepare("INSERT OR REPLACE INTO settings (key, value_json, updated_at) VALUES (?, ?, ?)")
+    await conn
+      .prepare("INSERT INTO settings (key, value_json, updated_at) VALUES (?, ?, ?) ON CONFLICT (key) DO UPDATE SET value_json = EXCLUDED.value_json, updated_at = EXCLUDED.updated_at")
       .run(SETTINGS_KEY, JSON.stringify(merged), ts);
 
-    auditLog(conn, {
+    await auditLog(conn, {
       action: "SETTINGS_UPDATED",
       actorUserId: session.user_id,
       targetUserId: null,
@@ -72,18 +72,18 @@ export async function POST(req: NextRequest) {
   });
 }
 
-const requireAdmin = (req: NextRequest) => {
-  const session = assertAuthenticated(req);
+const requireAdmin = async (req: NextRequest) => {
+  const session = await assertAuthenticated(req);
   const conn = getDb();
-  const roles = userRoles(conn, session.user_id);
+  const roles = await userRoles(conn, session.user_id);
   if (!roles.includes(ROLE_ADMIN) && !roles.includes(ROLE_SUPER_ADMIN)) {
     throw new ApiError(403, "FORBIDDEN", "Admin role required");
   }
   return { conn, session };
 };
 
-const getSettings = (conn: ReturnType<typeof getDb>): Settings => {
-  const row = conn.prepare("SELECT value_json FROM settings WHERE key = ?").get(SETTINGS_KEY) as { value_json: string } | undefined;
+const getSettings = async (conn: ReturnType<typeof getDb>): Promise<Settings> => {
+  const row = (await conn.prepare("SELECT value_json FROM settings WHERE key = ?").get(SETTINGS_KEY)) as { value_json: string } | undefined;
   if (!row) return defaultSettings;
   try {
     const parsed = JSON.parse(row.value_json);

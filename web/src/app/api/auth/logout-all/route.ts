@@ -8,12 +8,12 @@ import { COOKIE_CSRF, COOKIE_SESSION } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   return handleApi(req, async () => {
-    const session = assertAuthenticated(req);
+    const session = await assertAuthenticated(req);
     assertCsrf(req, session);
 
     const conn = getDb();
-    conn.prepare("UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL").run(nowTs(), session.user_id);
-    auditLog(conn, { action: "LOGOUT_ALL", actorUserId: session.user_id, targetUserId: session.user_id, ip: req.ip });
+    await conn.prepare("UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL").run(nowTs(), session.user_id);
+    await auditLog(conn, { action: "LOGOUT_ALL", actorUserId: session.user_id, targetUserId: session.user_id, ip: req.ip });
     return jsonResponse(204, {}, { clearCookies: [COOKIE_SESSION, COOKIE_CSRF] });
   });
 }

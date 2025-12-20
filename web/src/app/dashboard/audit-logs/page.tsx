@@ -3,11 +3,11 @@ import AuditLogsClient, { AuditLog } from "./AuditLogsClient";
 
 export const dynamic = 'force-dynamic';
 
-export default function AuditLogsPage() {
+export default async function AuditLogsPage() {
     const conn = getDb();
 
     // Server-side data fetching - much faster than client-side API calls
-    const rows = conn
+    const rows = (await conn
         .prepare(
             `
             SELECT a.id, a.action, a.actor_user_id, a.target_user_id, a.ip, a.created_at, a.metadata_json,
@@ -19,7 +19,7 @@ export default function AuditLogsPage() {
             LIMIT 50
             `
         )
-        .all() as Array<{
+        .all()) as Array<{
             id: string;
             action: string;
             actor_user_id: string | null;
@@ -37,7 +37,7 @@ export default function AuditLogsPage() {
         actorEmail: r.actor_email || "system",
         targetEmail: r.target_email || "",
         ip: r.ip || "-",
-        createdAt: r.created_at,
+        createdAt: Number(r.created_at || 0),
     }));
 
     return <AuditLogsClient initialLogs={initialLogs} />;

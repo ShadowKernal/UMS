@@ -130,7 +130,7 @@ export default function UsersClient({ initialRows }: UsersClientProps) {
                 </Box>
             )
         },
-        { field: 'created_at', headerName: 'Joined', width: 180, valueFormatter: (value: number) => new Date(value).toLocaleDateString() },
+        { field: 'created_at', headerName: 'Joined', width: 180, valueFormatter: (value: number) => value ? new Date(value * 1000).toLocaleDateString() : '—' },
         {
             field: 'actions',
             headerName: 'Actions',

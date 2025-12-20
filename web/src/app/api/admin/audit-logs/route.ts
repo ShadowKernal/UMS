@@ -6,10 +6,10 @@ import { getDb, userRoles } from "@/lib/db";
 import { ROLE_ADMIN, ROLE_SUPER_ADMIN } from "@/lib/constants";
 import { jsonResponse } from "@/lib/http";
 
-const requireAdmin = (req: NextRequest) => {
-  const session = assertAuthenticated(req);
+const requireAdmin = async (req: NextRequest) => {
+  const session = await assertAuthenticated(req);
   const conn = getDb();
-  const roles = userRoles(conn, session.user_id);
+  const roles = await userRoles(conn, session.user_id);
   if (!roles.includes(ROLE_ADMIN) && !roles.includes(ROLE_SUPER_ADMIN)) {
     throw new ApiError(403, "FORBIDDEN", "Admin role required");
   }
@@ -18,7 +18,7 @@ const requireAdmin = (req: NextRequest) => {
 
 export async function GET(req: NextRequest) {
   return handleApi(req, async () => {
-    const { conn } = requireAdmin(req);
+    const { conn } = await requireAdmin(req);
     const search = (req.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
     const format = (req.nextUrl.searchParams.get("format") || "").toLowerCase();
     const userId = (req.nextUrl.searchParams.get("userId") || "").trim();
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    const rows = conn
+    const rows = (await conn
       .prepare(
         `
         SELECT a.id, a.action, a.actor_user_id, a.target_user_id, a.ip, a.created_at, a.metadata_json,
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         LIMIT ? OFFSET ?
       `
       )
-      .all(...params, limit, offset) as Array<{
+      .all(...params, limit, offset)) as Array<{
         id: string;
         action: string;
         actor_user_id: string | null;
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       actorEmail: r.actor_email || "system",
       targetEmail: r.target_email || "",
       ip: r.ip || "-",
-      createdAt: r.created_at,
+      createdAt: Number(r.created_at || 0),
       metadata: safeParse(r.metadata_json)
     }));
 

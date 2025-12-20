@@ -12,7 +12,7 @@ export async function DELETE(
     { params }: { params: { id: string; sessionId: string } }
 ) {
     return handleApi(req, async () => {
-        const { conn, session } = requireAdmin(req);
+        const { conn, session } = await requireAdmin(req);
         const userId = params.id;
         const sessionId = params.sessionId;
 
@@ -21,20 +21,20 @@ export async function DELETE(
         }
 
         // Verify session belongs to user
-        const targetSession = conn
+        const targetSession = (await conn
             .prepare("SELECT id FROM sessions WHERE id = ? AND user_id = ?")
-            .get(sessionId, userId) as { id: string } | undefined;
+            .get(sessionId, userId)) as { id: string } | undefined;
 
         if (!targetSession) {
             throw new ApiError(404, "NOT_FOUND", "Session not found");
         }
 
         const ts = nowTs();
-        conn
+        await conn
             .prepare("UPDATE sessions SET revoked_at = ? WHERE id = ?")
             .run(ts, sessionId);
 
-        auditLog(conn, {
+        await auditLog(conn, {
             action: "SESSION_REVOKED",
             actorUserId: session.user_id,
             targetUserId: userId,
@@ -46,10 +46,10 @@ export async function DELETE(
     });
 }
 
-const requireAdmin = (req: NextRequest) => {
-    const session = assertAuthenticated(req);
+const requireAdmin = async (req: NextRequest) => {
+    const session = await assertAuthenticated(req);
     const conn = getDb();
-    const roles = userRoles(conn, session.user_id);
+    const roles = await userRoles(conn, session.user_id);
     if (!roles.includes(ROLE_ADMIN) && !roles.includes(ROLE_SUPER_ADMIN)) {
         throw new ApiError(403, "FORBIDDEN", "Admin role required");
     }

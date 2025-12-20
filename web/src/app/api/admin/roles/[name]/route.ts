@@ -11,7 +11,7 @@ const PROTECTED_ROLES = [ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_USER];
 
 export async function PATCH(req: NextRequest, { params }: { params: { name: string } }) {
   return handleApi(req, async () => {
-    const { conn, session } = requireAdmin(req);
+    const { conn, session } = await requireAdmin(req);
     const name = params.name?.toUpperCase();
     if (!name) throw new ApiError(400, "INVALID_REQUEST", "Role name required");
 
@@ -20,15 +20,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
     const permissions = normalizePermissions(body.permissions);
     if (permissions.length === 0) throw new ApiError(400, "VALIDATION_FAILED", "At least one permission is required");
 
-    const existing = conn.prepare("SELECT name FROM roles WHERE name = ?").get(name);
+    const existing = await conn.prepare("SELECT name FROM roles WHERE name = ?").get(name);
     if (!existing) throw new ApiError(404, "NOT_FOUND", "Role not found");
 
     const ts = nowTs();
-    conn
+    await conn
       .prepare("UPDATE roles SET description = ?, permissions_json = ?, updated_at = ? WHERE name = ?")
       .run(description || "", JSON.stringify(permissions), ts, name);
 
-    auditLog(conn, {
+    await auditLog(conn, {
       action: "ROLE_UPDATED",
       actorUserId: session.user_id,
       targetUserId: null,
@@ -42,21 +42,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
 
 export async function DELETE(req: NextRequest, { params }: { params: { name: string } }) {
   return handleApi(req, async () => {
-    const { conn, session } = requireAdmin(req);
+    const { conn, session } = await requireAdmin(req);
     const name = params.name?.toUpperCase();
     if (!name) throw new ApiError(400, "INVALID_REQUEST", "Role name required");
     if (PROTECTED_ROLES.includes(name)) throw new ApiError(400, "FORBIDDEN", "Protected roles cannot be deleted");
 
-    const existing = conn.prepare("SELECT name FROM roles WHERE name = ?").get(name);
+    const existing = await conn.prepare("SELECT name FROM roles WHERE name = ?").get(name);
     if (!existing) throw new ApiError(404, "NOT_FOUND", "Role not found");
 
-    const tx = conn.transaction(() => {
-      conn.prepare("DELETE FROM roles WHERE name = ?").run(name);
-      conn.prepare("DELETE FROM user_roles WHERE role_name = ?").run(name);
+    const tx = conn.transaction(async (txn) => {
+      await txn.prepare("DELETE FROM roles WHERE name = ?").run(name);
+      await txn.prepare("DELETE FROM user_roles WHERE role_name = ?").run(name);
     });
-    tx();
+    await tx();
 
-    auditLog(conn, {
+    await auditLog(conn, {
       action: "ROLE_DELETED",
       actorUserId: session.user_id,
       targetUserId: null,
@@ -68,10 +68,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
   });
 }
 
-const requireAdmin = (req: NextRequest) => {
-  const session = assertAuthenticated(req);
+const requireAdmin = async (req: NextRequest) => {
+  const session = await assertAuthenticated(req);
   const conn = getDb();
-  const roles = userRoles(conn, session.user_id);
+  const roles = await userRoles(conn, session.user_id);
   if (!roles.includes(ROLE_ADMIN) && !roles.includes(ROLE_SUPER_ADMIN)) {
     throw new ApiError(403, "FORBIDDEN", "Admin role required");
   }

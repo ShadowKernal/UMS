@@ -27,21 +27,21 @@ export async function POST(req: NextRequest) {
       email: string;
     }
 
-    const user = conn.prepare("SELECT * FROM users WHERE email_norm = ?").get(normalizeEmail(identifier)) as User | undefined;
+    const user = (await conn.prepare("SELECT * FROM users WHERE email_norm = ?").get(normalizeEmail(identifier))) as User | undefined;
     if (user && user.status !== USER_STATUS_DISABLED && user.status !== USER_STATUS_DELETED) {
       const rawToken = randomToken(18);
-      conn
+      await conn
         .prepare(
           "INSERT INTO password_reset_tokens (id, user_id, token_hash, created_at, expires_at, used_at, requested_from_ip) VALUES (?, ?, ?, ?, ?, NULL, ?)"
         )
         .run(newId(), user.id, sha256Hex(rawToken), ts, ts + 3600, getClientIp(req));
       const resetLink = `${getBaseUrl(req)}/reset-password?token=${encodeURIComponent(rawToken)}`;
-      sendDevEmail(conn, {
+      await sendDevEmail(conn, {
         toEmail: user.email,
         subject: "Password reset",
         body: `Your password reset code:\n\n${rawToken}\n\nOr open:\n${resetLink}\n`
       });
-      auditLog(conn, { action: "PASSWORD_RESET_REQUESTED", actorUserId: user.id, targetUserId: user.id, ip: getClientIp(req) });
+      await auditLog(conn, { action: "PASSWORD_RESET_REQUESTED", actorUserId: user.id, targetUserId: user.id, ip: getClientIp(req) });
     }
 
     return jsonResponse(202, { ok: true });

@@ -3,11 +3,11 @@ import GroupsClient, { Group } from "./GroupsClient";
 
 export const dynamic = 'force-dynamic';
 
-export default function GroupsPage() {
+export default async function GroupsPage() {
     const conn = getDb();
 
     // Server-side data fetching - much faster than client-side API calls
-    const groups = conn
+    const groups = (await conn
         .prepare(
             `
             SELECT g.id, g.name, g.description, g.created_at, g.updated_at, COUNT(m.user_id) as members
@@ -17,15 +17,15 @@ export default function GroupsPage() {
             ORDER BY g.name ASC
             `
         )
-        .all() as Array<{ id: string; name: string; description: string | null; created_at: number; updated_at: number; members: number }>;
+        .all()) as Array<{ id: string; name: string; description: string | null; created_at: number; updated_at: number; members: number }>;
 
     const memberSamples = new Map<
         string,
         Array<{ user_id: string; display_name: string; email: string }>
     >();
 
-    groups.forEach((g) => {
-        const rows = conn
+    for (const g of groups) {
+        const rows = (await conn
             .prepare(
                 `
                 SELECT u.id as user_id, u.display_name, u.email
@@ -36,15 +36,15 @@ export default function GroupsPage() {
                 LIMIT 4
                 `
             )
-            .all(g.id) as Array<{ user_id: string; display_name: string; email: string }>;
+            .all(g.id)) as Array<{ user_id: string; display_name: string; email: string }>;
         memberSamples.set(g.id, rows);
-    });
+    }
 
     const initialGroups: Group[] = groups.map((g) => ({
         id: g.id,
         name: g.name,
         description: g.description || "",
-        members: g.members,
+        members: Number(g.members || 0),
         memberSample: memberSamples.get(g.id) || []
     }));
 

@@ -5,7 +5,7 @@ import { jsonResponse } from "@/lib/http";
 
 export async function GET(req: NextRequest) {
   return handleApi(req, async () => {
-    const session = assertAuthenticated(req);
+    const session = await assertAuthenticated(req);
     return jsonResponse(200, {
       user: {
         id: session.user_id,

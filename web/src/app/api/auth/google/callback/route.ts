@@ -85,13 +85,13 @@ export async function GET(req: NextRequest) {
   }
 
   let userId: string;
-  const existing = conn.prepare("SELECT * FROM users WHERE email_norm = ?").get(emailNorm) as UserRow | undefined;
+  const existing = (await conn.prepare("SELECT * FROM users WHERE email_norm = ?").get(emailNorm)) as UserRow | undefined;
 
   if (existing) {
     if (existing.status === USER_STATUS_DISABLED) return redirectWithError("account_disabled");
     if (existing.status === USER_STATUS_DELETED) return redirectWithError("account_not_found");
     userId = existing.id;
-    conn
+    await conn
       .prepare("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?), display_name = COALESCE(display_name, ?), last_login_at = ?, updated_at = ? WHERE id = ?")
       .run(ts, displayName, ts, ts, userId);
   } else {
@@ -99,17 +99,17 @@ export async function GET(req: NextRequest) {
     const insertUser = conn.prepare(
       "INSERT INTO users (id, email, email_norm, email_verified_at, password_hash, status, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)"
     );
-    insertUser.run(userId, email, emailNorm, ts, USER_STATUS_ACTIVE, displayName, ts, ts);
-    conn
+    await insertUser.run(userId, email, emailNorm, ts, USER_STATUS_ACTIVE, displayName, ts, ts);
+    await conn
       .prepare("INSERT INTO user_roles (user_id, role_name, assigned_by_user_id, assigned_at) VALUES (?, ?, NULL, ?)")
       .run(userId, ROLE_USER, ts);
   }
 
-  const session = createSession({ userId, remember: true, req });
+  const session = await createSession({ userId, remember: true, req });
   const res = NextResponse.redirect(redirectAfter || "/admin");
   session.cookies.forEach((cookie) => res.cookies.set(cookie.name, cookie.value, cookie.options));
   clearCookies(res);
-  auditLog(conn, { action: existing ? "LOGIN_SUCCESS_GOOGLE" : "SIGNUP_GOOGLE", actorUserId: userId, targetUserId: userId, ip: req.ip });
+  await auditLog(conn, { action: existing ? "LOGIN_SUCCESS_GOOGLE" : "SIGNUP_GOOGLE", actorUserId: userId, targetUserId: userId, ip: req.ip });
 
   return res;
 }

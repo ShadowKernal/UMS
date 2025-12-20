@@ -15,11 +15,11 @@ const DEFAULT_SECURITY: SecuritySettings = {
     sso: { google: false, okta: false, customSaml: false }
 };
 
-export default function SecurityPage() {
+export default async function SecurityPage() {
     const conn = getDb();
 
     // Server-side data fetching - much faster than client-side API calls
-    const row = conn.prepare("SELECT value_json FROM settings WHERE key = ?").get(SETTINGS_KEY) as { value_json: string } | undefined;
+    const row = (await conn.prepare("SELECT value_json FROM settings WHERE key = ?").get(SETTINGS_KEY)) as { value_json: string } | undefined;
 
     let initialSecurity = DEFAULT_SECURITY;
     if (row) {

@@ -11,8 +11,8 @@ export const metadata = {
 // Use dynamic rendering since we are reading cookies/headers
 export const dynamic = 'force-dynamic';
 
-export default function PlannerLayout({ children }: { children: React.ReactNode }) {
-    const user = getCurrentUser();
+export default async function PlannerLayout({ children }: { children: React.ReactNode }) {
+    const user = await getCurrentUser();
 
     if (!user) {
         redirect('/login');

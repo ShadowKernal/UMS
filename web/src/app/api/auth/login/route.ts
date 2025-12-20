@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     const conn = getDb();
-    const user = conn.prepare("SELECT * FROM users WHERE email_norm = ?").get(normalizeEmail(identifier)) as User | undefined;
+    const user = (await conn.prepare("SELECT * FROM users WHERE email_norm = ?").get(normalizeEmail(identifier))) as User | undefined;
     if (!user) throw new ApiError(401, "INVALID_CREDENTIALS", "Invalid credentials");
     if (user.status === USER_STATUS_DISABLED) throw new ApiError(403, "ACCOUNT_DISABLED", "Account disabled");
     if (user.status === USER_STATUS_DELETED) throw new ApiError(401, "INVALID_CREDENTIALS", "Invalid credentials");
@@ -34,15 +34,15 @@ export async function POST(req: NextRequest) {
       throw new ApiError(401, "INVALID_CREDENTIALS", "Invalid credentials");
     }
 
-    const session = createSession({ userId: user.id, remember: rememberMe, req });
+    const session = await createSession({ userId: user.id, remember: rememberMe, req });
     const ts = nowTs();
-    conn.prepare("UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?").run(ts, ts, user.id);
-    auditLog(conn, { action: "LOGIN_SUCCESS", actorUserId: user.id, targetUserId: user.id, ip: req.ip });
+    await conn.prepare("UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?").run(ts, ts, user.id);
+    await auditLog(conn, { action: "LOGIN_SUCCESS", actorUserId: user.id, targetUserId: user.id, ip: req.ip });
 
     return jsonResponse(
       200,
       {
-        user: { id: user.id, email: user.email, status: user.status, roles: userRoles(conn, user.id) },
+        user: { id: user.id, email: user.email, status: user.status, roles: await userRoles(conn, user.id) },
         session: { id: session.sessionId, expiresAt: isoTs(session.expiresAt) }
       },
       { cookies: session.cookies }

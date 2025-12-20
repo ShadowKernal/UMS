@@ -14,9 +14,9 @@ export async function GET(req: NextRequest) {
       created_at: number;
     }
 
-    const items = conn
+    const items = (await conn
       .prepare("SELECT id, to_email, subject, body, created_at FROM dev_outbox ORDER BY created_at DESC LIMIT 50")
-      .all() as OutboxItem[];
+      .all()) as OutboxItem[];
     return jsonResponse(200, { messages: items });
   });
 }

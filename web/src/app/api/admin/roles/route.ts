@@ -9,17 +9,17 @@ import { nowTs } from "@/lib/time";
 
 export async function GET(req: NextRequest) {
   return handleApi(req, async () => {
-    const { conn } = requireAdmin(req);
+    const { conn } = await requireAdmin(req);
 
-    const rolesTable = conn
+    const rolesTable = (await conn
       .prepare("SELECT name, description, permissions_json, created_at, updated_at FROM roles ORDER BY name ASC")
-      .all() as Array<{ name: string; description: string | null; permissions_json: string; created_at: number; updated_at: number }>;
-    const counts = conn
+      .all()) as Array<{ name: string; description: string | null; permissions_json: string; created_at: number; updated_at: number }>;
+    const counts = (await conn
       .prepare("SELECT role_name as name, COUNT(user_id) as users FROM user_roles GROUP BY role_name")
-      .all() as Array<{ name: string; users: number }>;
+      .all()) as Array<{ name: string; users: number }>;
 
     const countsMap = new Map<string, number>();
-    counts.forEach((r) => countsMap.set(r.name, r.users));
+    counts.forEach((r) => countsMap.set(r.name, Number(r.users || 0)));
 
     const existingNames = new Set(rolesTable.map((r) => r.name));
     const enrichedRoles = [
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return handleApi(req, async () => {
-    const { conn, session } = requireAdmin(req);
+    const { conn, session } = await requireAdmin(req);
     const body = await req.json();
     const rawName = String(body.name || "").trim();
     const name = rawName.toUpperCase();
@@ -64,14 +64,14 @@ export async function POST(req: NextRequest) {
     if (permissions.length === 0) throw new ApiError(400, "VALIDATION_FAILED", "At least one permission is required");
 
     try {
-      conn
+      await conn
         .prepare("INSERT INTO roles (name, description, permissions_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
         .run(name, description, JSON.stringify(permissions), ts, ts);
     } catch {
       throw new ApiError(409, "CONFLICT", "Role already exists");
     }
 
-    auditLog(conn, {
+    await auditLog(conn, {
       action: "ROLE_CREATED",
       actorUserId: session.user_id,
       targetUserId: null,
@@ -85,10 +85,10 @@ export async function POST(req: NextRequest) {
   });
 }
 
-const requireAdmin = (req: NextRequest) => {
-  const session = assertAuthenticated(req);
+const requireAdmin = async (req: NextRequest) => {
+  const session = await assertAuthenticated(req);
   const conn = getDb();
-  const roles = userRoles(conn, session.user_id);
+  const roles = await userRoles(conn, session.user_id);
   if (!roles.includes(ROLE_ADMIN) && !roles.includes(ROLE_SUPER_ADMIN)) {
     throw new ApiError(403, "FORBIDDEN", "Admin role required");
   }
