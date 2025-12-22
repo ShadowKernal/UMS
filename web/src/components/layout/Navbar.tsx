@@ -17,6 +17,8 @@ const navLinks = [
 export default function Navbar() {
     const pathname = usePathname();
     const [scrolled, setScrolled] = useState(false);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [checkedAuth, setCheckedAuth] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -24,6 +26,25 @@ export default function Navbar() {
         };
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    useEffect(() => {
+        const loadMe = async () => {
+            try {
+                const res = await fetch("/api/me");
+                if (!res.ok) {
+                    setCheckedAuth(true);
+                    return;
+                }
+                const data = await res.json();
+                setUserEmail(String(data?.user?.email || "") || null);
+            } catch {
+                // Ignore auth probe failures.
+            } finally {
+                setCheckedAuth(true);
+            }
+        };
+        loadMe();
     }, []);
 
     return (
@@ -86,16 +107,33 @@ export default function Navbar() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Link href="/login">
-                            <Button variant="ghost" className="hidden sm:inline-flex text-slate-600 hover:text-emerald-700">
-                                Log in
-                            </Button>
-                        </Link>
-                        <Link href="/signup">
-                            <Button className="rounded-full px-6 shadow-emerald-300/40 hover:shadow-emerald-300/60">
-                                Start Prepping
-                            </Button>
-                        </Link>
+                        {checkedAuth && userEmail ? (
+                            <>
+                                <Link href="/planner">
+                                    <Button variant="ghost" className="hidden sm:inline-flex text-slate-600 hover:text-emerald-700">
+                                        My Plan
+                                    </Button>
+                                </Link>
+                                <Link href="/account">
+                                    <Button className="rounded-full px-6 shadow-emerald-300/40 hover:shadow-emerald-300/60">
+                                        Account
+                                    </Button>
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link href="/login">
+                                    <Button variant="ghost" className="hidden sm:inline-flex text-slate-600 hover:text-emerald-700">
+                                        Log in
+                                    </Button>
+                                </Link>
+                                <Link href="/signup">
+                                    <Button className="rounded-full px-6 shadow-emerald-300/40 hover:shadow-emerald-300/60">
+                                        Start Prepping
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
