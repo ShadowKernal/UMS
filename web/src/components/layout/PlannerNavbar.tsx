@@ -14,6 +14,7 @@ export default function PlannerNavbar({ user }: { user?: { display_name?: string
     const pathname = usePathname();
     const router = useRouter();
     const [scrolled, setScrolled] = useState(false);
+    const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -24,7 +25,23 @@ export default function PlannerNavbar({ user }: { user?: { display_name?: string
     }, []);
 
     const handleLogout = async () => {
-        await fetch("/api/auth/logout", { method: "POST" });
+        let token = csrfToken;
+        if (!token) {
+            try {
+                const res = await fetch("/api/me");
+                if (res.ok) {
+                    const data = await res.json();
+                    token = String(data?.csrfToken || "");
+                    setCsrfToken(token || null);
+                }
+            } catch {
+                // Ignore and attempt logout anyway.
+            }
+        }
+        await fetch("/api/auth/logout", {
+            method: "POST",
+            headers: token ? { "x-csrf-token": token } : undefined
+        });
         router.push("/");
         router.refresh();
     };
