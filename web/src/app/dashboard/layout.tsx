@@ -1,6 +1,7 @@
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { getCurrentUser } from '@/lib/session';
+import { getCurrentUserWithRoles } from '@/lib/session';
 import { redirect } from 'next/navigation';
+import { ROLE_ADMIN, ROLE_SUPER_ADMIN } from '@/lib/constants';
 
 export const metadata = {
     title: 'UMS Dashboard',
@@ -11,10 +12,14 @@ export const metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-    const user = await getCurrentUser();
+    const user = await getCurrentUserWithRoles();
 
     if (!user) {
         redirect('/login');
+    }
+
+    if (!user.roles.includes(ROLE_ADMIN) && !user.roles.includes(ROLE_SUPER_ADMIN)) {
+        redirect('/account');
     }
 
     // Only pass serializable user data

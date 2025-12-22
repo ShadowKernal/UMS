@@ -85,6 +85,31 @@ export const getCurrentUser = async () => {
   return user || null;
 };
 
+export const getCurrentUserWithRoles = async () => {
+  if (!dbEnabled) return null;
+  const cookieStore = cookies();
+  const token = cookieStore.get(COOKIE_SESSION)?.value;
+  if (!token) return null;
+
+  const session = await validateSessionToken(token);
+  if (!session) return null;
+
+  const conn = getDb();
+  const user = (await conn.prepare("SELECT id, email, display_name, status FROM users WHERE id = ?").get(session.user_id)) as {
+    id: string;
+    email: string;
+    display_name: string;
+    status: string;
+  } | undefined;
+
+  if (!user) return null;
+
+  return {
+    ...user,
+    roles: session.roles
+  };
+};
+
 
 export const assertAuthenticated = async (req: NextRequest): Promise<ActiveSession> => {
   const session = await getActiveSession(req);
